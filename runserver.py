@@ -118,6 +118,11 @@ serverinfo_meta = {
 }
 
 
+def urlsafe_b64encode(data):
+    return base64.b64encode(bytes(data, 'utf-8')).decode()
+
+app.jinja_env.filters['urlsafe_b64encode'] = urlsafe_b64encode
+
 @app.route("/", methods=['GET', 'POST'])
 def login():
     """
@@ -178,11 +183,11 @@ def keys(host, port, db):
         perpage = int(request.args.get("perpage", "10"))
         pattern = request.args.get('pattern', '*')
         dbsize = r.dbsize()
-        keys = sorted(r.keys(pattern))
+        keys = sorted([k.decode() for k in r.keys(pattern)])
         limited_keys = keys[offset:(perpage+offset)]
         types = {}
         for key in limited_keys:
-            types[key] = r.type(key)
+            types[key] = r.type(key).decode()
         return render_template('keys.html',
             host=host,
             port=port,
@@ -203,7 +208,7 @@ def key(host, port, db, key):
     Show a specific key.
     key is expected to be URL-safe base64 encoded
     """
-    key = base64.urlsafe_b64decode(key.encode("utf8"))
+    key = base64.urlsafe_b64decode(key).decode()
     s = time.time()
     r = redis.StrictRedis(host=host, port=port, db=db)
     dump = r.dump(key)
@@ -213,7 +218,7 @@ def key(host, port, db, key):
     #    abort(404)
     size = len(dump)
     del dump
-    t = r.type(key)
+    t = r.type(key).decode()
     ttl = r.pttl(key)
     if t == "string":
         val = r.get(key).decode('utf-8', 'replace')

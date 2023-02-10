@@ -21,8 +21,8 @@ Execute this:
 
     git clone https://github.com/marians/rebrow.git
     cd rebrow
-    virtualenv venv
-    source venv/bin/activate
+    python3 -m venv .venv
+    source .venv/bin/activate
     pip install -r requirements.txt
     python runserver.py
 
