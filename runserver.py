@@ -118,6 +118,13 @@ serverinfo_meta = {
 }
 
 
+def get_cert_path(filename):
+    base_path = os.path.abspath(os.path.dirname(__file__))
+    cert_path = os.path.join(base_path, 'ssl', filename)
+    print(f'cert_path: {cert_path}')
+    return cert_path
+
+
 def urlsafe_b64encode(data):
     return base64.b64encode(bytes(data, 'utf-8')).decode()
 
@@ -147,7 +154,13 @@ def server_db(host, port, db):
     List all databases and show info on server
     """
     s = time.time()
-    r = redis.StrictRedis(host=host, port=port, db=0)
+    tls_config = {
+        'ssl': True,
+        'ssl_ca_certs': get_cert_path('ca.pem'),
+        'ssl_certfile': get_cert_path('RedisClient.pem'),
+        'ssl_keyfile':  get_cert_path('RedisClient.key'),
+    }
+    r = redis.StrictRedis(host="leecountychilichallenge2024.com", port=6379, db=0, **tls_config)
     info = r.info("all")
     dbsize = r.dbsize()
     return render_template('server.html',
@@ -166,7 +179,14 @@ def keys(host, port, db):
     List keys for one database
     """
     s = time.time()
-    r = redis.StrictRedis(host=host, port=port, db=db)
+    print(f'Connecting to {host}:{port}')
+    tls_config = {
+        'ssl': True,
+        'ssl_ca_certs': get_cert_path('ca.pem'),
+        'ssl_certfile': get_cert_path('RedisClient.pem'),
+        'ssl_keyfile':  get_cert_path('RedisClient.key'),
+    }
+    r = redis.StrictRedis(host=host, port=port, db=db, **tls_config)
     if request.method == "POST":
         action = request.form["action"]
         app.logger.debug(action)
@@ -210,7 +230,14 @@ def key(host, port, db, key):
     """
     key = base64.urlsafe_b64decode(key).decode()
     s = time.time()
-    r = redis.StrictRedis(host=host, port=port, db=db)
+    print(f'Connecting to {host}:{port}')
+    tls_config = {
+        'ssl': True,
+        'ssl_ca_certs': get_cert_path('ca.pem'),
+        'ssl_certfile': get_cert_path('RedisClient.pem'),
+        'ssl_keyfile':  get_cert_path('RedisClient.key'),
+    }
+    r = redis.StrictRedis(host=host, port=port, db=db, **tls_config)
     dump = r.dump(key)
     if dump is None:
         abort(404)
@@ -258,7 +285,14 @@ def pubsub(host, port, db):
 
 
 def pubsub_event_stream(host, port, db, pattern):
-    r = redis.StrictRedis(host=host, port=port, db=db)
+    print(f'Connecting to {host}:{port}')
+    tls_config = {
+        'ssl': True,
+        'ssl_ca_certs': get_cert_path('ca.pem'),
+        'ssl_certfile': get_cert_path('RedisClient.pem'),
+        'ssl_keyfile':  get_cert_path('RedisClient.key'),
+    }
+    r = redis.StrictRedis(host=host, port=port, db=db, **tls_config)
     p = r.pubsub()
     p.psubscribe(pattern)
     for message in p.listen():
